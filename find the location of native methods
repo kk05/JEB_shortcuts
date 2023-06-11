@@ -1,0 +1,56 @@
+def find_native_method_locations(apk):
+    native_methods = {}
+
+    # Iterate over all classes in the APK
+    for cls in apk.getClasses():
+        class_name = cls.getName()
+
+        # Iterate over all methods in the class
+        for method in cls.getMethods():
+            if method.isNative():
+                method_name = method.getName()
+
+                # Find the implementation address of the native method
+                method_address = method.getImplementationAddress()
+                if method_address is None:
+                    continue
+
+                # Find the corresponding shared object file
+                so_file = method.getImplementingSharedObject()
+                if so_file is None:
+                    continue
+
+                # Store the native method information
+                native_methods[method_name] = (class_name, method_address, so_file)
+
+    return native_methods
+
+
+if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        print("Usage: python jeb_script.py <APK file>")
+        sys.exit(1)
+
+    apk_file_path = sys.argv[1]
+
+    # Initialize JEB
+    engctx = jebengapi.getEnginesContext()
+    prj = engctx.loadProject(apk_file_path)
+
+    # Get the APK unit
+    units = prj.getUnits()
+    apk = next((unit for unit in units if unit.getFormatType() == "DEX"), None)
+
+    if apk is None:
+        print("APK unit not found in the project.")
+        sys.exit(1)
+
+    native_methods = find_native_method_locations(apk)
+
+    # Print the native method information
+    for method_name, (class_name, method_address, so_file) in native_methods.items():
+        print("Method: {}.{} at address 0x{:X}".format(class_name, method_name, method_address))
+        print("Associated shared object file: {}".format(so_file))
+
+    # Close the project
+    prj.close()
