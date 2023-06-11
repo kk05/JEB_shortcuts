@@ -1,0 +1,11 @@
+=> Space key to go back and forth ( default interactive full disassembly view and the interactive control flow graph of the currently examined method/routine)
+
+=> Renaming: An important requirement for analysts is the ability to rename code items such as types, methods and routines, fields and data items, packages, etc. consistently across a code base.
+             - Position the caret on the item to be renamed
+             - Hit the N key or select Action, Rename
+             - Enter the new name and press Enter
+
+
+in a code view, press the / (slash) key to add a comment.
+
+https://github.com/enovella/jebscripts/blob/master/DexGuardStringDecoder.java
