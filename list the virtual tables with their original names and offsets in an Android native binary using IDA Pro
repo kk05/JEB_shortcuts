@@ -1,0 +1,29 @@
+import idaapi
+
+def get_class_name(class_struct):
+    class_name = idaapi.get_true_name(class_struct.id)
+    if class_name is None:
+        class_name = idaapi.get_struc_name(class_struct.id)
+    return class_name
+
+def list_virtual_tables():
+    vtables = []
+    for class_struct in idaapi.cvar.idati.struc_segregs:
+        if class_struct.is_struct() and class_struct.is_union():
+            class_name = get_class_name(class_struct)
+            if class_name is not None:
+                for member in idaapi.idautils.StructMembers(class_struct):
+                    if member.is_funcptr():
+                        vtable_offset = member.soff
+                        vtables.append((class_name, vtable_offset))
+    return vtables
+
+def print_virtual_tables():
+    vtables = list_virtual_tables()
+    for vtable in vtables:
+        class_name = vtable[0]
+        vtable_offset = hex(vtable[1])
+        print("Class: {} | Vtable Offset: {}".format(class_name, vtable_offset))
+
+# Execute the script
+print_virtual_tables()
