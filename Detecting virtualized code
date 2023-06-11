@@ -1,0 +1,67 @@
+import re
+
+def detect_virtualized_code(apk):
+    classes = apk.getClasses()
+    
+    obfuscated_classes = []
+    dynamic_code_loading = []
+    opaque_predicates = []
+    
+    for cls in classes:
+        class_name = cls.getName()
+        
+        # Check for obfuscated class names
+        if re.match(r"L[a-zA-Z0-9]{8};", class_name):
+            obfuscated_classes.append(class_name)
+        
+        for method in cls.getMethods():
+            # Check for dynamic code loading
+            if method.isVirtual():
+                dynamic_code_loading.append(method.getName())
+            
+            # Check for opaque predicates
+            instructions = method.getInstructions()
+            for inst in instructions:
+                if inst.getMnemonic() == "if" and re.match(r"goto\s+[-0-9]+", inst.getOpStr()):
+                    opaque_predicates.append(method.getName() + ":" + inst.getAddress())
+    
+    # Print the detected indicators
+    if obfuscated_classes:
+        print("Obfuscated class names:")
+        for cls_name in obfuscated_classes:
+            print(cls_name)
+    
+    if dynamic_code_loading:
+        print("Dynamic code loading methods:")
+        for method_name in dynamic_code_loading:
+            print(method_name)
+    
+    if opaque_predicates:
+        print("Opaque predicates:")
+        for predicate in opaque_predicates:
+            print(predicate)
+
+
+if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        print("Usage: python jeb_script.py <APK file>")
+        sys.exit(1)
+        
+    apk_file_path = sys.argv[1]
+
+    # Initialize JEB
+    engctx = jebengapi.getEnginesContext()
+    prj = engctx.loadProject(apk_file_path)
+
+    # Get the APK unit
+    units = prj.getUnits()
+    apk = next((unit for unit in units if unit.getFormatType() == "DEX"), None)
+    
+    if apk is None:
+        print("APK unit not found in the project.")
+        sys.exit(1)
+
+    detect_virtualized_code(apk)
+    
+    # Close the project
+    prj.close()
